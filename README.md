@@ -85,10 +85,10 @@
   }
   
   ```
-- server.json
+- server.js
   - 시험용 서버
 
-  ```json
+  ```js
   import express from "express";
   
   const app = express();
@@ -150,5 +150,93 @@
   }
   ```
 
-## 0.4
-개발 환경 세팅을 했음
+## 0.4 Recap
+- 개발 환경 세팅을 했음
+
+- sever.js
+  ```js
+  import express from "express";
+  
+  const app = express();
+  
+  app.set("view engine", "pug");
+  app.set("views", __dirname +"/views");
+  app.use("/public", express.static(__dirname + "/public"));
+  app.get("/", (req,res) => res.render("home"));
+  app.get("/*", (req,res) => res.redirect("/"));
+  const handleListen = () => console.log(`Listening on http://localhost:3000`)
+  app.listen(3000, handleListen);
+  ```
+---
+
+
+# 1 CHAT WITH WEBSOCKET
+## 1.0 Introduction
+### 실시간 채팅 앱을 만들어보자
+> 구현 기능
+> - 닉네임 설정
+> - 채팅방 입장/퇴장 공지
+> - 실시간 채팅
+
+
+## 1.1 HTTP vs WebSockets
+### http
+> - req에 해당하는 res를 제공
+> - stateless
+> - res 이후 유저를 기억할 수 없다.
+> - 이미 유저 인증을 했다면 쿠키를 제공해야함
+> - real time 이 아님
+> - 브라우저는 req만 할 수 있음
+
+   
+### web socket
+> - req를 보내면 accept 아니면 거절을 함
+> - accept되면 브라우저와 서버는 쭉 연결이 되어 있음.
+> - 연결돼있기 때문에, 유저를 기억할 수 있음
+> - 서버가 브라우저에 메세지를 보낼 수 있음
+> - 브라우저도 서버에 메세지를 보낼 수 있음
+> - 실시간 서비스가 가능한 이유임
+> - 양방향
+> - 브라우저와 벡엔드 간의 연결에만 국한된 것이 아님.
+> - api 통신, 벡엔드 끼리 통신에도 이용될 수 있음
+
+
+## 1.2 WebSockets in NodeJS
+### nodeJS로 웹소켓 서버를 만들어보자. 
+> ws라는 패키지 도움을 받을 것임   
+> ws 는 웹 소켓 프로토콜(일종의 규약)을 단순히 이식(implementation)한 패키지일 뿐! 기본이고 근본인 것   
+> 웹소켓을 이용한 라이브러리는 거의 모든 언어에 존재한다.   
+> 추후에는 이 패키지 이용하지 않을거임.   
+> ws를 기반으로 만든 framework를 사용할 거고 거기에는 채팅방 기능이 이미 구현돼 있음
+
+- 먼저 ws 패키지를 만들어 준다.
+> shell
+> ```shell
+> npm i ws
+> ```
+- 서버 작업을 하자
+  - express 에 http를 다루는 서버에다가 ws 를 다루는 함수를 추가하자
+> server.js
+```js
+import http from "http";
+import WebSocket from "ws";
+import express from "express";
+
+const app = express();
+
+app.set("view engine", "pug");
+app.set("views", __dirname +"/views");
+app.use("/public", express.static(__dirname + "/public"));
+app.get("/", (req,res) => res.render("home"));
+app.get("/*", (req,res) => res.redirect("/"));
+const handleListen = () => console.log(`Listening on http://localhost:3000`)
+
+//http 모듈을 이용해서 서버를 만들자
+const server = http.createServer(app);
+//WebSocket 서버를 만들자
+const wss = new WebSocket.Server({ server }); //이렇게 하면 http 서버와 같은 포트에서 함께 돌릴 수 있다. ws 서버만 돌려도 됌. 꼭 이렇게 하라는 건 아님
+
+
+server.listen(3000, handleListen);
+```
+
