@@ -616,7 +616,9 @@ nickForm.addEventListener("submit", handleNickSubmit);
 ## 1.8 Nicknames Part Two
 
 ### 벡에서 닉네임과 메시지를 구분해보자!
+
 > server.js
+
 ```js
 import http from "http";
 import WebSocket from "ws";
@@ -665,5 +667,9 @@ wss.on("connection", (socket) => {
 });
 
 server.listen(3000, handleListen);
-
 ```
+
+## 1.9 Conclusions
+
+### 결론
+> 웹소켓 기본 라이브러리로 실시간 기능을 만드는 데에 문제가 없었지만, 스트링을 JSON으로 바꾼다거나 하는 과정이 필요하는 둥 번거로운 과정이 필요했고, 불편한 과정들이 있었음. 챕터 2에서는 웹소켓을 이용하는 프레임 워크를 사용해서 더욱 편리하게 실시간 기능을 만들 것임. 
