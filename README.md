@@ -379,10 +379,14 @@ setTimeout(() => {
 ```
 
 ## 1.5 Recap
-###  복습해보자
+
+### 복습해보자
+
 > server.js
+>
 > - wss.on("connection",)이 여러개 생길 수 있고
-> 브라우저는 socket인 것.. 마치 Room처럼 작동
+>   브라우저는 socket인 것.. 마치 Room처럼 작동
+
 ```js
 import http from "http";
 import WebSocket from "ws";
@@ -417,5 +421,108 @@ wss.on("connection", (socket) => {
 });
 
 server.listen(3000, handleListen);
+```
 
+## 1.6 Chat Completed
+
+### 채팅 기능을 완성해보자
+
+> home.pug
+>
+> - form을 추가해줍니다
+
+```pug
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title ZoomClone
+        link(rel="stylesheet",href="https://unpkg.com/mvp.css")
+    body
+        header
+            h1 ZoomClone
+        main
+            h2 Welcome to ZoomClone
+            ul
+            form
+                input(type="text", placeholder="write a msg", required)
+                button  Send
+
+        script(src="/public/js/app.js")
+
+
+```
+
+> server.js
+
+```js
+import http from "http";
+import WebSocket from "ws";
+import express from "express";
+
+const app = express();
+
+app.set("view engine", "pug");
+app.set("views", __dirname + "/views");
+app.use("/public", express.static(__dirname + "/public"));
+app.get("/", (_, res) => res.render("home"));
+app.get("/*", (_, res) => res.redirect("/"));
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+
+//http 모듈을 이용해서 서버를 만들자
+const server = http.createServer(app);
+//WebSocket 서버를 만들자
+const wss = new WebSocket.Server({ server }); //이렇게 하면 http 서버와 같은 포트에서 함께 돌릴 수 있다. ws 서버만 돌려도 됌. 꼭 이렇게 하라는 건 아님
+
+//wss.on("connection") 이 발생할 때 입장한 (브라우저들)소켓들을 넣어줄 배열
+const sockets = [];
+
+//현 상태를 알기 쉽게 표현한 함수 표현 방식
+//connection 이벤트가 달리면 socket을 통해서 어느 클라이언트인지 알 수 있다.
+//wss 는 전체 웹소켓 서버고 socket은 연결된 각각의 브라우저이다.
+wss.on("connection", (socket) => {
+  sockets.push(socket);
+  console.log("Connected to Browser ✅");
+  socket.on("close", () => {
+    console.log("Disconnected from Browser TㅁT");
+  });
+  //for 문을 이용해서 모든 소켓들에게 메시지를 전송한다!
+  socket.on("message", (message) => {
+    sockets.forEach((aSocket) => aSocket.send(message.toString()));
+  });
+});
+
+server.listen(3000, handleListen);
+```
+
+> app.js
+
+```js
+const messageList = document.querySelector("ul");
+const messageForm = document.querySelector("form");
+
+const socket = new WebSocket(`ws://${window.location.host}`);
+
+socket.addEventListener("open", () => {
+  console.log("Connected to Server ✅");
+});
+
+//서버에서 보낸 데이터를 받을 수 있음..!
+socket.addEventListener("message", (msg) => {
+  console.log("New message:", msg.data);
+});
+
+socket.addEventListener("close", () => {
+  console.log("Disconnected from Server TㅁT");
+});
+
+function handleSubmit(event) {
+  event.preventDefault();
+  const input = messageForm.querySelector("input");
+  socket.send(input.value);
+  input.value = "";
+}
+messageForm.addEventListener("submit", handleSubmit);
 ```
