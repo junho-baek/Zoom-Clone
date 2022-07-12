@@ -24,13 +24,23 @@ const sockets = [];
 //wss 는 전체 웹소켓 서버고 socket은 연결된 각각의 브라우저이다.
 wss.on("connection", (socket) => {
   sockets.push(socket);
+  socket["nickname"] = "익명";
   console.log("Connected to Browser ✅");
   socket.on("close", () => {
     console.log("Disconnected from Browser TㅁT");
   });
   //for 문을 이용해서 모든 소켓들에게 메시지를 전송한다!
-  socket.on("message", (message) => {
-    sockets.forEach((aSocket) => aSocket.send(message.toString()));
+  socket.on("message", (msg) => {
+    const message = JSON.parse(msg.toString());
+
+    switch (message.type) {
+      case "new_message":
+        sockets.forEach((aSocket) =>
+          aSocket.send(`${socket.nickname}: ${message.payload}`)
+        );
+      case "nickname":
+        socket["nickname"] = message.payload; // 소켓도 객체라서 새로운 정보를 저장할 수 있다.
+    }
   });
 });
 

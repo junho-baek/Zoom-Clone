@@ -1,18 +1,17 @@
 const messageList = document.querySelector("ul");
 const nickForm = document.querySelector("#nick");
-const messageForm = document.querySelector("#massage");
+const messageForm = document.querySelector("#message");
 
 const socket = new WebSocket(`ws://${window.location.host}`);
 
 //닉네임이랑 메세지를 구분하고 싶어서 json 객체가 필요함.
 //서버에 전송하려면 스트링이어야하나 json을 보내고 싶을 땐,
 //프론트에선 JSON.stringify
-// 벡에선 JSON.parase
-function makeMessage(type, payload){
-    const msg = {type, payload};
-    return JSON.stringify(msg);
+// 벡에선 JSON.parse
+function makeMessage(type, payload) {
+  const msg = { type, payload };
+  return JSON.stringify(msg);
 }
-
 
 socket.addEventListener("open", () => {
   console.log("Connected to Server ✅");
@@ -39,6 +38,7 @@ function handleNickSubmit(event) {
   event.preventDefault();
   const input = nickForm.querySelector("input");
   socket.send(makeMessage("nickname", input.value));
+  input.value = "";
 }
 messageForm.addEventListener("submit", handleSubmit);
 nickForm.addEventListener("submit", handleNickSubmit);

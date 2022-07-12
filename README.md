@@ -531,7 +531,8 @@ messageForm.addEventListener("submit", handleSubmit);
 
 ### 닉네임을 추가해보자
 
->home.pug
+> home.pug
+
 ```pug
 doctype html
 html(lang="en")
@@ -545,10 +546,10 @@ html(lang="en")
         header
             h1 ZoomClone
         main
-            h2 Welcome to ZoomClone 
+            h2 Welcome to ZoomClone
             form#nick
                 input(type="text", placeholder="choose a nickname", required)
-                button  Save 
+                button  Save
             ul
             form#message
                 input(type="text", placeholder="write a msg", required)
@@ -560,11 +561,11 @@ html(lang="en")
 ```
 
 > app.js
+>
 > - socket.send 로 닉네임과 메세지를 구분하지 못함
 > - 그래서 json으로 구분할 수 있게 만드려고 했음
 > - 근데 socket.send 는 프론트에서 벡으로 전송할 때 스트링만 받음
 > - 이럴 때는 JSON.stringify!!
-
 
 ```js
 const messageList = document.querySelector("ul");
@@ -577,11 +578,10 @@ const socket = new WebSocket(`ws://${window.location.host}`);
 //서버에 전송하려면 스트링이어야하나 json을 보내고 싶을 땐,
 //프론트에선 JSON.stringify
 // 벡에선 JSON.parase
-function makeMessage(type, payload){
-    const msg = {type, payload};
-    return JSON.stringify(msg);
+function makeMessage(type, payload) {
+  const msg = { type, payload };
+  return JSON.stringify(msg);
 }
-
 
 socket.addEventListener("open", () => {
   console.log("Connected to Server ✅");
@@ -611,5 +611,59 @@ function handleNickSubmit(event) {
 }
 messageForm.addEventListener("submit", handleSubmit);
 nickForm.addEventListener("submit", handleNickSubmit);
+```
+
+## 1.8 Nicknames Part Two
+
+### 벡에서 닉네임과 메시지를 구분해보자!
+> server.js
+```js
+import http from "http";
+import WebSocket from "ws";
+import express from "express";
+
+const app = express();
+
+app.set("view engine", "pug");
+app.set("views", __dirname + "/views");
+app.use("/public", express.static(__dirname + "/public"));
+app.get("/", (_, res) => res.render("home"));
+app.get("/*", (_, res) => res.redirect("/"));
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+
+//http 모듈을 이용해서 서버를 만들자
+const server = http.createServer(app);
+//WebSocket 서버를 만들자
+const wss = new WebSocket.Server({ server }); //이렇게 하면 http 서버와 같은 포트에서 함께 돌릴 수 있다. ws 서버만 돌려도 됌. 꼭 이렇게 하라는 건 아님
+
+//wss.on("connection") 이 발생할 때 입장한 (브라우저들)소켓들을 넣어줄 배열
+const sockets = [];
+
+//현 상태를 알기 쉽게 표현한 함수 표현 방식
+//connection 이벤트가 달리면 socket을 통해서 어느 클라이언트인지 알 수 있다.
+//wss 는 전체 웹소켓 서버고 socket은 연결된 각각의 브라우저이다.
+wss.on("connection", (socket) => {
+  sockets.push(socket);
+  socket["nickname"] = "익명";
+  console.log("Connected to Browser ✅");
+  socket.on("close", () => {
+    console.log("Disconnected from Browser TㅁT");
+  });
+  //for 문을 이용해서 모든 소켓들에게 메시지를 전송한다!
+  socket.on("message", (msg) => {
+    const message = JSON.parse(msg.toString());
+
+    switch (message.type) {
+      case "new_message":
+        sockets.forEach((aSocket) =>
+          aSocket.send(`${socket.nickname}: ${message.payload}`)
+        );
+      case "nickname":
+        socket["nickname"] = message.payload; // 소켓도 객체라서 새로운 정보를 저장할 수 있다.
+    }
+  });
+});
+
+server.listen(3000, handleListen);
 
 ```
