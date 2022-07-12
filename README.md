@@ -240,3 +240,6 @@ const wss = new WebSocket.Server({ server }); //이렇게 하면 http 서버와 
 server.listen(3000, handleListen);
 ```
 
+## 1.3 WebSocket Events
+
+### 웹 소켓은 이벤트가 있으면 함수를 호출시킴. 프론트엔드 스크립트와 비슷하다
