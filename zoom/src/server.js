@@ -6,10 +6,11 @@ const app = express();
 
 app.set("view engine", "pug");
 app.set("views", __dirname +"/views");
+app.set('port', process.env.PORT || 3000);
 app.use("/public", express.static(__dirname + "/public"));
 app.get("/", (req,res) => res.render("home"));
 app.get("/*", (req,res) => res.redirect("/"));
-const handleListen = () => console.log(`Listening on http://localhost:3000`)
+const handleListen = () => console.log(`Listening on ${process.env.PORT}`)
 
 //http 모듈을 이용해서 서버를 만들자
 const server = http.createServer(app);
@@ -24,4 +25,4 @@ function handleConnection(socket){
 // 소켓은 연결 라인이다. 
 wss.on("connection", handleConnection);
 
-server.listen(3000, handleListen);
+server.listen(process.env.PORT, handleListen);
