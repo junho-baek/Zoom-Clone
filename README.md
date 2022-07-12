@@ -526,3 +526,90 @@ function handleSubmit(event) {
 }
 messageForm.addEventListener("submit", handleSubmit);
 ```
+
+## 1.7 Nicknames Part One
+
+### 닉네임을 추가해보자
+
+>home.pug
+```pug
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title ZoomClone
+        link(rel="stylesheet",href="https://unpkg.com/mvp.css")
+    body
+        header
+            h1 ZoomClone
+        main
+            h2 Welcome to ZoomClone 
+            form#nick
+                input(type="text", placeholder="choose a nickname", required)
+                button  Save 
+            ul
+            form#message
+                input(type="text", placeholder="write a msg", required)
+                button  Send
+
+        script(src="/public/js/app.js")
+
+
+```
+
+> app.js
+> - socket.send 로 닉네임과 메세지를 구분하지 못함
+> - 그래서 json으로 구분할 수 있게 만드려고 했음
+> - 근데 socket.send 는 프론트에서 벡으로 전송할 때 스트링만 받음
+> - 이럴 때는 JSON.stringify!!
+
+
+```js
+const messageList = document.querySelector("ul");
+const nickForm = document.querySelector("#nick");
+const messageForm = document.querySelector("#massage");
+
+const socket = new WebSocket(`ws://${window.location.host}`);
+
+//닉네임이랑 메세지를 구분하고 싶어서 json 객체가 필요함.
+//서버에 전송하려면 스트링이어야하나 json을 보내고 싶을 땐,
+//프론트에선 JSON.stringify
+// 벡에선 JSON.parase
+function makeMessage(type, payload){
+    const msg = {type, payload};
+    return JSON.stringify(msg);
+}
+
+
+socket.addEventListener("open", () => {
+  console.log("Connected to Server ✅");
+});
+
+//서버에서 보낸 데이터를 받을 수 있음..!
+socket.addEventListener("message", (msg) => {
+  const li = document.createElement("li");
+  li.innerText = msg.data;
+  messageList.append(li);
+});
+
+socket.addEventListener("close", () => {
+  console.log("Disconnected from Server TㅁT");
+});
+
+function handleSubmit(event) {
+  event.preventDefault();
+  const input = messageForm.querySelector("input");
+  socket.send(makeMessage("new_message", input.value));
+  input.value = "";
+}
+function handleNickSubmit(event) {
+  event.preventDefault();
+  const input = nickForm.querySelector("input");
+  socket.send(makeMessage("nickname", input.value));
+}
+messageForm.addEventListener("submit", handleSubmit);
+nickForm.addEventListener("submit", handleNickSubmit);
+
+```
