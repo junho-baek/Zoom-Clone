@@ -19,7 +19,16 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
-  console.log(socket);
+  //프런트에서 임의로 생성한 이벤트를 받고, 프런트에서 전송한 객체를 msg에 담음
+  //콜백함수는 done에 담음.
+  //서버에서 done이 실행되잖아? 그럼 프런트에서 지정한 함수가 콜백돼서 프런트에서 실행됌
+  //진짜 쩐다..
+  socket.on("enter_room", (msg, done) => {
+    console.log(msg)
+    setTimeout(() =>{
+      done();
+    }, 10000)
+    });
 })
 
 // //WebSocket 서버를 만들자

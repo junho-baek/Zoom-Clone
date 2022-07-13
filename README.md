@@ -793,4 +793,124 @@ html(lang="en")
 
 ## 2.2 SocketIO is Amazing!
 ### 소켓아이오가 왜 놀라운지 알아보자
+> socket.io 프레임워크를 쓰면 socket.emit 을 프런트에서 사용가능하다. 근데 이게 놀라운게, 이벤트를 만들어낸다. 인자도 스트링의 제약없이 다양하게 줄 수 있다. 심지어 콜백함수도 서버에 전송할 수 있다. 서버에서 함수가 실행되면 프런트에서 콜백되서 실행된다. 정말 멋진 기술인데, 자유도도 어마어마하다.
 
+> home.pug
+> - 새로운 폼을 하나 추가했습니다.
+```pug
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title ZoomClone
+        link(rel="stylesheet",href="https://unpkg.com/mvp.css")
+    body
+        header
+            h1 ZoomClone
+        main
+            div#welcome
+                form
+                    input(placeholder="room name", required, type="text")
+                    button Enter Room
+
+        script(src="/socket.io/socket.io.js")
+        script(src="/public/js/app.js")
+
+
+```
+
+> app.js
+```js
+//이거면 소켓 연결;; 엄청 간편하다..
+const socket = io();
+
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
+
+function handleRoomSubmit(event){
+  event.preventDefault();
+  const input = form.querySelector("input");
+  //socket.emit 은 완전 멋진거임. 이벤트를 생성하고, 자유롭게 인자를 줄 수 있음. 
+  //그 인자가 스트링일 필요도 없고 오브젝트여도 됌..!!
+  //콜백함수도 가능.. 서버에 콜백함수를 전달하고 서버에서 실행이 되면, 프런트에서 지정한 함수가 콜백돼서 실행됌. 정말 쩌는 기술이다..
+  socket.emit("enter_room", { payload: input.value}, () => {
+    console.log("server is done!");
+  });
+  input.value = "";
+}
+
+form.addEventListener("submit", handleRoomSubmit);
+```
+
+> server.js
+
+```js
+import http from "http";
+// import WebSocket from "ws";
+import SocketIO from "socket.io";
+import express from "express";
+
+const app = express();
+
+app.set("view engine", "pug");
+app.set("views", __dirname + "/views");
+app.use("/public", express.static(__dirname + "/public"));
+app.get("/", (_, res) => res.render("home"));
+app.get("/*", (_, res) => res.redirect("/"));
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+
+//http 모듈을 이용해서 서버를 만들자
+const httpServer = http.createServer(app);
+
+// socket.io 서버를 만들어주자
+const wsServer = SocketIO(httpServer);
+
+wsServer.on("connection", (socket) => {
+  //프런트에서 임의로 생성한 이벤트를 받고, 프런트에서 전송한 객체를 msg에 담음
+  //콜백함수는 done에 담음.
+  //서버에서 done이 실행되잖아? 그럼 프런트에서 지정한 함수가 콜백돼서 프런트에서 실행됌
+  //진짜 쩐다..
+  socket.on("enter_room", (msg, done) => {
+    console.log(msg)
+    setTimeout(() =>{
+      done();
+    }, 10000)
+    });
+})
+
+// //WebSocket 서버를 만들자
+// const wss = new WebSocket.Server({ server }); //이렇게 하면 http 서버와 같은 포트에서 함께 돌릴 수 있다. ws 서버만 돌려도 됌. 꼭 이렇게 하라는 건 아님
+
+// //wss.on("connection") 이 발생할 때 입장한 (브라우저들)소켓들을 넣어줄 배열
+// const sockets = [];
+
+// //현 상태를 알기 쉽게 표현한 함수 표현 방식
+// //connection 이벤트가 달리면 socket을 통해서 어느 클라이언트인지 알 수 있다.
+// //wss 는 전체 웹소켓 서버고 socket은 연결된 각각의 브라우저이다.
+// wss.on("connection", (socket) => {
+//   sockets.push(socket);
+//   socket["nickname"] = "익명";
+//   console.log("Connected to Browser ✅");
+//   socket.on("close", () => {
+//     console.log("Disconnected from Browser TㅁT");
+//   });
+//   //for 문을 이용해서 모든 소켓들에게 메시지를 전송한다!
+//   socket.on("message", (msg) => {
+//     const message = JSON.parse(msg.toString());
+
+//     switch (message.type) {
+//       case "new_message":
+//         sockets.forEach((aSocket) =>
+//           aSocket.send(`${socket.nickname}: ${message.payload}`)
+//         );
+//       case "nickname":
+//         socket["nickname"] = message.payload; // 소켓도 객체라서 새로운 정보를 저장할 수 있다.
+//     }
+//   });
+// });
+
+httpServer.listen(3000, handleListen);
+
+```
