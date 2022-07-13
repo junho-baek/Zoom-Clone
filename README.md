@@ -692,4 +692,105 @@ const socket = new WebSocket(`wss://${window.location.host}`);
 - socket.io: 양방향, 실시간, 이벤트 기반 통신을 도와줌. 웹소켓이랑 거의 유사하나 더 기능이 많고, 웹소켓을 이용하는 프레임워크임. 웹소켓만 이용하는 것은 아님. 웹소켓이 제대로 작동하지 않으면, 다른 프로토콜, 프록시 등을 이용함.
 
 ## 2.1 Installing SocketIO
-###
+### 소켓아이오를 설치하고 서버를 만들어보자
+
+> shell
+ ```shell
+ npm i socket.io
+ ```
+
+> app.js
+```js
+//이거면 소켓 연결;; 엄청 간편하다..
+const socket = io();
+```
+
+> server.js
+> - 기존의 웹 소켓 서버를 없애고 소켓아이오를 임포트 해온 뒤 아이오서버를 만들었습니다. 똑같이 커넥션 이벤트가 생기면 소켓을 받을 수 있는데, 콘솔로그 찍어보면 조금 달라진 소켓을 확인할 수 있습니다. 연결된 소켓들이 표시된다는 것과 같이 조금 더 자세한 소켓 정보가 찍히는걸 확인할 수 있네요
+```js
+import http from "http";
+// import WebSocket from "ws";
+import SocketIO from "socket.io";
+import express from "express";
+
+const app = express();
+
+app.set("view engine", "pug");
+app.set("views", __dirname + "/views");
+app.use("/public", express.static(__dirname + "/public"));
+app.get("/", (_, res) => res.render("home"));
+app.get("/*", (_, res) => res.redirect("/"));
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+
+//http 모듈을 이용해서 서버를 만들자
+const httpServer = http.createServer(app);
+
+// socket.io 서버를 만들어주자
+const wsServer = SocketIO(httpServer);
+
+wsServer.on("connection", (socket) => {
+  console.log(socket);
+})
+
+// //WebSocket 서버를 만들자
+// const wss = new WebSocket.Server({ server }); //이렇게 하면 http 서버와 같은 포트에서 함께 돌릴 수 있다. ws 서버만 돌려도 됌. 꼭 이렇게 하라는 건 아님
+
+// //wss.on("connection") 이 발생할 때 입장한 (브라우저들)소켓들을 넣어줄 배열
+// const sockets = [];
+
+// //현 상태를 알기 쉽게 표현한 함수 표현 방식
+// //connection 이벤트가 달리면 socket을 통해서 어느 클라이언트인지 알 수 있다.
+// //wss 는 전체 웹소켓 서버고 socket은 연결된 각각의 브라우저이다.
+// wss.on("connection", (socket) => {
+//   sockets.push(socket);
+//   socket["nickname"] = "익명";
+//   console.log("Connected to Browser ✅");
+//   socket.on("close", () => {
+//     console.log("Disconnected from Browser TㅁT");
+//   });
+//   //for 문을 이용해서 모든 소켓들에게 메시지를 전송한다!
+//   socket.on("message", (msg) => {
+//     const message = JSON.parse(msg.toString());
+
+//     switch (message.type) {
+//       case "new_message":
+//         sockets.forEach((aSocket) =>
+//           aSocket.send(`${socket.nickname}: ${message.payload}`)
+//         );
+//       case "nickname":
+//         socket["nickname"] = message.payload; // 소켓도 객체라서 새로운 정보를 저장할 수 있다.
+//     }
+//   });
+// });
+
+httpServer.listen(3000, handleListen);
+
+```
+
+> home.pug
+> - 일단 다 없애고 다시 시작해봅시다
+> - script(src="/socket.io/socket.io.js") 이걸 적어줘야 적용이 됩니다.소켓 아이오는 자바스크립트 기반 프레임워크니까요, 브라우저에 기본적으로 깔려있는 웹소켓 프로토콜과는 다릅니다.
+```pug
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title ZoomClone
+        link(rel="stylesheet",href="https://unpkg.com/mvp.css")
+    body
+        header
+            h1 ZoomClone
+        main
+
+
+        script(src="/socket.io/socket.io.js")
+        script(src="/public/js/app.js")
+
+
+```
+
+## 2.2 SocketIO is Amazing!
+### 소켓아이오가 왜 놀라운지 알아보자
+
