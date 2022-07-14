@@ -914,3 +914,109 @@ wsServer.on("connection", (socket) => {
 httpServer.listen(3000, handleListen);
 
 ```
+
+## 2.3 Recap
+### 복습해보자!
+
+- 소켓아이오는 오브젝트를 보내도 된다. 여러개의 변수를 줘도 된다. 서버와 연결이 안되면 다시 연결하려고 노력한다. socket.emit만 있다면 가능하다. 원하는 변수를 어떤 변수든 상관 없이. 마지막 인자로 함수를 줄 수 있다. 벡엔드는 프론트의 함수를 쓸 수 없지만(보안문제 때문에) 콜백은 해줄 수 있다. 심지어 인자를 추가한 상태로도 가능하다. 코드로 알아보자.
+
+> server.js
+```js
+import http from "http";
+// import WebSocket from "ws";
+import SocketIO from "socket.io";
+import express from "express";
+
+const app = express();
+
+app.set("view engine", "pug");
+app.set("views", __dirname + "/views");
+app.use("/public", express.static(__dirname + "/public"));
+app.get("/", (_, res) => res.render("home"));
+app.get("/*", (_, res) => res.redirect("/"));
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+
+//http 모듈을 이용해서 서버를 만들자
+const httpServer = http.createServer(app);
+
+// socket.io 서버를 만들어주자
+const wsServer = SocketIO(httpServer);
+
+wsServer.on("connection", (socket) => {
+  //프런트에서 임의로 생성한 이벤트를 받고, 프런트에서 전송한 객체를 msg에 담음
+  //콜백함수는 done에 담음.
+  //서버에서 done이 실행되잖아? 그럼 프런트에서 지정한 함수가 콜백돼서 프런트에서 실행됌
+  //진짜 쩐다..
+  socket.on("enter_room", (roomName, done) => {
+    console.log(roomName);
+    setTimeout(() => {
+      done("hello from the backend");
+      
+    },15000)
+    
+    });
+})
+
+// //WebSocket 서버를 만들자
+// const wss = new WebSocket.Server({ server }); //이렇게 하면 http 서버와 같은 포트에서 함께 돌릴 수 있다. ws 서버만 돌려도 됌. 꼭 이렇게 하라는 건 아님
+
+// //wss.on("connection") 이 발생할 때 입장한 (브라우저들)소켓들을 넣어줄 배열
+// const sockets = [];
+
+// //현 상태를 알기 쉽게 표현한 함수 표현 방식
+// //connection 이벤트가 달리면 socket을 통해서 어느 클라이언트인지 알 수 있다.
+// //wss 는 전체 웹소켓 서버고 socket은 연결된 각각의 브라우저이다.
+// wss.on("connection", (socket) => {
+//   sockets.push(socket);
+//   socket["nickname"] = "익명";
+//   console.log("Connected to Browser ✅");
+//   socket.on("close", () => {
+//     console.log("Disconnected from Browser TㅁT");
+//   });
+//   //for 문을 이용해서 모든 소켓들에게 메시지를 전송한다!
+//   socket.on("message", (msg) => {
+//     const message = JSON.parse(msg.toString());
+
+//     switch (message.type) {
+//       case "new_message":
+//         sockets.forEach((aSocket) =>
+//           aSocket.send(`${socket.nickname}: ${message.payload}`)
+//         );
+//       case "nickname":
+//         socket["nickname"] = message.payload; // 소켓도 객체라서 새로운 정보를 저장할 수 있다.
+//     }
+//   });
+// });
+
+httpServer.listen(3000, handleListen);
+
+```
+> app.js
+```js
+//이거면 소켓 연결;; 엄청 간편하다..
+const socket = io();
+
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
+
+//벡엔드에 신호 요청을 하고 나중에 실행될 콜백함수
+//벡엔드에서 인자를 부여할 수도 있다.
+function backendDone(msg){
+  console.log(`The backend says: ${msg}`);
+}
+
+
+
+function handleRoomSubmit(event){
+  event.preventDefault();
+  const input = form.querySelector("input");
+  //socket.emit 은 완전 멋진거임. 이벤트를 생성하고, 자유롭게 인자를 줄 수 있음. 
+  //그 인자가 스트링일 필요도 없고 오브젝트여도 됌..!!
+  //콜백함수도 가능.. 서버에 콜백함수를 전달하고 서버에서 실행이 되면, 프런트에서 지정한 함수가 콜백돼서 실행됌. 정말 쩌는 기술이다..
+  socket.emit("enter_room", input.value, backendDone);
+  input.value = "";
+}
+
+form.addEventListener("submit", handleRoomSubmit);
+```
+

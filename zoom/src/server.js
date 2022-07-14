@@ -23,11 +23,13 @@ wsServer.on("connection", (socket) => {
   //콜백함수는 done에 담음.
   //서버에서 done이 실행되잖아? 그럼 프런트에서 지정한 함수가 콜백돼서 프런트에서 실행됌
   //진짜 쩐다..
-  socket.on("enter_room", (msg, done) => {
-    console.log(msg)
-    setTimeout(() =>{
-      done();
-    }, 10000)
+  socket.on("enter_room", (roomName, done) => {
+    console.log(roomName);
+    setTimeout(() => {
+      done("hello from the backend");
+      
+    },15000)
+    
     });
 })
 
